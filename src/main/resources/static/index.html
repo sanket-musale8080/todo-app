@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Todo App</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d0d0f;
+      --surface:   #141417;
+      --card:      #1a1a1f;
+      --border:    #2a2a32;
+      --accent:    #7c6eff;
+      --accent-dim:#3d3580;
+      --success:   #34d399;
+      --danger:    #f87171;
+      --warning:   #fbbf24;
+      --text:      #e8e8f0;
+      --muted:     #6b6b7e;
+      --mono:      'JetBrains Mono', monospace;
+      --sans:      'Inter', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    header .logo {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--accent);
+      letter-spacing: 0.08em;
+      background: #1e1a40;
+      padding: 4px 10px;
+      border-radius: 4px;
+      border: 1px solid var(--accent-dim);
+    }
+    header h1 {
+      font-size: 17px;
+      font-weight: 500;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+    header .stats {
+      margin-left: auto;
+      display: flex;
+      gap: 20px;
+    }
+    header .stat {
+      text-align: right;
+    }
+    header .stat-num {
+      font-family: var(--mono);
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--accent);
+      line-height: 1;
+    }
+    header .stat-label {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    /* ── LAYOUT ── */
+    .layout {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      min-height: calc(100vh - 61px);
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .section-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    /* ── FORM ── */
+    .form-group { margin-bottom: 14px; }
+    label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+    input, textarea {
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.15s;
+      resize: none;
+    }
+    input:focus, textarea:focus {
+      border-color: var(--accent);
+    }
+    input::placeholder, textarea::placeholder { color: var(--muted); }
+
+    .error-msg {
+      font-size: 11px;
+      color: var(--danger);
+      margin-top: 4px;
+      display: none;
+    }
+    .error-msg.show { display: block; }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 18px;
+      border-radius: 8px;
+      border: none;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: var(--sans);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      width: 100%;
+      justify-content: center;
+    }
+    .btn-primary:hover { background: #6a5de8; }
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      width: 100%;
+      justify-content: center;
+    }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-sm {
+      padding: 5px 10px;
+      font-size: 11px;
+      border-radius: 5px;
+    }
+    .btn-success { background: #1a3d30; color: var(--success); border: 1px solid #234d3c; }
+    .btn-success:hover { background: #1f4a38; }
+    .btn-danger  { background: #3d1a1a; color: var(--danger);  border: 1px solid #4d2323; }
+    .btn-danger:hover  { background: #4a1f1f; }
+    .btn-edit    { background: #2a2718; color: var(--warning); border: 1px solid #3d3820; }
+    .btn-edit:hover    { background: #33301c; }
+
+    /* ── SEARCH ── */
+    .search-wrap { position: relative; }
+    .search-wrap input { padding-left: 36px; }
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      font-size: 14px;
+      pointer-events: none;
+    }
+
+    /* ── FILTERS ── */
+    .filter-tabs {
+      display: flex;
+      gap: 6px;
+    }
+    .filter-tab {
+      flex: 1;
+      padding: 7px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+      font-family: var(--sans);
+    }
+    .filter-tab.active {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    /* ── MAIN ── */
+    .main {
+      padding: 24px;
+      overflow-y: auto;
+    }
+    .main-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .main-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--muted);
+      font-family: var(--mono);
+    }
+    .main-title span { color: var(--accent); }
+
+    /* ── TODO CARD ── */
+    .todo-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .todo-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 18px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      transition: border-color 0.15s, transform 0.1s;
+      animation: slideIn 0.2s ease;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .todo-card:hover { border-color: #3a3a48; }
+    .todo-card.completed { opacity: 0.55; }
+    .todo-card.completed .todo-name { text-decoration: line-through; color: var(--muted); }
+
+    .todo-check {
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      flex-shrink: 0;
+      margin-top: 2px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .todo-check:hover { border-color: var(--success); }
+    .todo-card.completed .todo-check {
+      background: var(--success);
+      border-color: var(--success);
+    }
+    .todo-check svg { display: none; }
+    .todo-card.completed .todo-check svg { display: block; }
+
+    .todo-body { flex: 1; min-width: 0; }
+    .todo-name {
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .todo-desc {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .todo-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .todo-id {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--accent);
+      background: #1e1a40;
+      padding: 2px 7px;
+      border-radius: 4px;
+    }
+    .todo-time {
+      font-size: 10px;
+      color: var(--muted);
+      font-family: var(--mono);
+    }
+    .todo-badge {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 500;
+    }
+    .badge-pending  { background: #2a2212; color: var(--warning); }
+    .badge-done     { background: #122a1e; color: var(--success); }
+
+    .todo-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      width: 420px;
+      max-width: 90vw;
+      animation: popIn 0.15s ease;
+    }
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.96); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    .modal-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+    .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+    .modal-actions .btn { flex: 1; justify-content: center; }
+
+    /* ── TOAST ── */
+    .toast-wrap {
+      position: fixed;
+      bottom: 24px; right: 24px;
+      display: flex; flex-direction: column; gap: 8px;
+      z-index: 300;
+    }
+    .toast {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13px;
+      display: flex; align-items: center; gap: 10px;
+      animation: toastIn 0.2s ease;
+      min-width: 240px;
+    }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateX(20px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    .toast.success { border-color: #234d3c; }
+    .toast.error   { border-color: #4d2323; }
+    .toast-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .toast.success .toast-dot { background: var(--success); }
+    .toast.error   .toast-dot { background: var(--danger); }
+
+    /* ── EMPTY ── */
+    .empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+    }
+    .empty-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.4; }
+    .empty p { font-size: 14px; }
+
+    /* ── LOADING ── */
+    .loading {
+      display: flex; align-items: center; justify-content: center;
+      padding: 60px;
+      color: var(--muted);
+      font-size: 13px;
+      gap: 10px;
+    }
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── DIVIDER ── */
+    .divider {
+      height: 1px;
+      background: var(--border);
+    }
+
+    @media (max-width: 768px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { border-right: none; border-bottom: 1px solid var(--border); }
+      header .stats { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">POST /api/todos</div>
+  <h1>Todo App</h1>
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-num" id="stat-total">0</div>
+      <div class="stat-label">Total</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" id="stat-pending" style="color:var(--warning)">0</div>
+      <div class="stat-label">Pending</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" id="stat-done" style="color:var(--success)">0</div>
+      <div class="stat-label">Done</div>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+
+    <!-- CREATE FORM -->
+    <div>
+      <div class="section-label">Create Todo</div>
+      <div class="form-group">
+        <label>Name *</label>
+        <input type="text" id="input-name" placeholder="Buy groceries..." maxlength="100"/>
+        <div class="error-msg" id="err-name">Name must be at least 2 characters</div>
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="input-desc" rows="3" placeholder="Optional details..." maxlength="255"></textarea>
+        <div class="error-msg" id="err-desc">Max 255 characters</div>
+      </div>
+      <button class="btn btn-primary" onclick="createTodo()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Todo
+      </button>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- SEARCH -->
+    <div>
+      <div class="section-label">Search</div>
+      <div class="search-wrap">
+        <span class="search-icon">⌕</span>
+        <input type="text" id="search-input" placeholder="Search by name..." oninput="searchTodos()"/>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- FILTERS -->
+    <div>
+      <div class="section-label">Filter</div>
+      <div class="filter-tabs">
+        <button class="filter-tab active" onclick="setFilter('all', this)">All</button>
+        <button class="filter-tab" onclick="setFilter('pending', this)">Pending</button>
+        <button class="filter-tab" onclick="setFilter('completed', this)">Done</button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- REFRESH -->
+    <button class="btn btn-ghost" onclick="loadTodos()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      Refresh
+    </button>
+
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="main-header">
+      <div class="main-title">
+        GET <span>/api/todos</span>
+      </div>
+      <div id="result-count" style="font-size:12px;color:var(--muted)"></div>
+    </div>
+    <div id="todo-list" class="todo-list">
+      <div class="loading"><div class="spinner"></div> Loading todos...</div>
+    </div>
+  </main>
+</div>
+
+<!-- UPDATE MODAL -->
+<div class="modal-overlay" id="update-modal">
+  <div class="modal">
+    <div class="modal-title">Edit Todo</div>
+    <input type="hidden" id="edit-id"/>
+    <div class="form-group">
+      <label>Name *</label>
+      <input type="text" id="edit-name" maxlength="100"/>
+      <div class="error-msg" id="err-edit-name">Name must be at least 2 characters</div>
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <textarea id="edit-desc" rows="3" maxlength="255"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="updateTodo()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<script>
+  const BASE = 'http://localhost:8080/todos';
+  let allTodos = [];
+  let currentFilter = 'all';
+
+  // ── LOAD ALL ──────────────────────────────────────────────
+  async function loadTodos() {
+    document.getElementById('todo-list').innerHTML =
+      '<div class="loading"><div class="spinner"></div> Loading...</div>';
+    try {
+      const res = await fetch(BASE);
+      if (!res.ok) throw new Error();
+      allTodos = await res.json();
+      renderTodos();
+      updateStats();
+    } catch {
+      document.getElementById('todo-list').innerHTML =
+        '<div class="empty"><div class="empty-icon">⚡</div><p>Could not connect to server.<br/>Make sure Spring Boot is running on port 8080.</p></div>';
+    }
+  }
+
+  // ── RENDER ────────────────────────────────────────────────
+  function renderTodos() {
+    const search = document.getElementById('search-input').value.toLowerCase();
+    let list = allTodos;
+
+    if (currentFilter === 'pending')   list = list.filter(t => !t.completed);
+    if (currentFilter === 'completed') list = list.filter(t =>  t.completed);
+    if (search) list = list.filter(t => t.name.toLowerCase().includes(search));
+
+    document.getElementById('result-count').textContent =
+      list.length + ' item' + (list.length !== 1 ? 's' : '');
+
+    if (list.length === 0) {
+      document.getElementById('todo-list').innerHTML =
+        '<div class="empty"><div class="empty-icon">✓</div><p>No todos here yet.<br/>Create one using the form.</p></div>';
+      return;
+    }
+
+    document.getElementById('todo-list').innerHTML = list.map(todo => `
+      <div class="todo-card ${todo.completed ? 'completed' : ''}" id="card-${todo.id}">
+        <div class="todo-check" onclick="markComplete(${todo.id}, ${todo.completed})" title="Mark complete">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="todo-body">
+          <div class="todo-name">${escHtml(todo.name)}</div>
+          ${todo.description ? `<div class="todo-desc">${escHtml(todo.description)}</div>` : ''}
+          <div class="todo-meta">
+            <span class="todo-id">#${todo.id}</span>
+            <span class="todo-time">${formatDate(todo.createdAt)}</span>
+            <span class="todo-badge ${todo.completed ? 'badge-done' : 'badge-pending'}">
+              ${todo.completed ? 'Done' : 'Pending'}
+            </span>
+          </div>
+        </div>
+        <div class="todo-actions">
+          ${!todo.completed ? `
+          <button class="btn btn-sm btn-edit" onclick="openEditModal(${todo.id}, '${escAttr(todo.name)}', '${escAttr(todo.description || '')}')">
+            Edit
+          </button>` : ''}
+          <button class="btn btn-sm btn-danger" onclick="deleteTodo(${todo.id})">
+            Delete
+          </button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // ── STATS ─────────────────────────────────────────────────
+  function updateStats() {
+    document.getElementById('stat-total').textContent   = allTodos.length;
+    document.getElementById('stat-pending').textContent = allTodos.filter(t => !t.completed).length;
+    document.getElementById('stat-done').textContent    = allTodos.filter(t =>  t.completed).length;
+  }
+
+  // ── CREATE ────────────────────────────────────────────────
+  async function createTodo() {
+    const name = document.getElementById('input-name').value.trim();
+    const desc = document.getElementById('input-desc').value.trim();
+    let valid = true;
+
+    if (name.length < 2) {
+      document.getElementById('err-name').classList.add('show');
+      valid = false;
+    } else {
+      document.getElementById('err-name').classList.remove('show');
+    }
+    if (desc.length > 255) {
+      document.getElementById('err-desc').classList.add('show');
+      valid = false;
+    } else {
+      document.getElementById('err-desc').classList.remove('show');
+    }
+    if (!valid) return;
+
+    try {
+      const res = await fetch(BASE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, description: desc })
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        toast(err.name || 'Validation error', 'error');
+        return;
+      }
+      const created = await res.json();
+      allTodos.unshift(created);
+      document.getElementById('input-name').value = '';
+      document.getElementById('input-desc').value = '';
+      renderTodos();
+      updateStats();
+      toast('Todo created!', 'success');
+    } catch {
+      toast('Server error. Is Spring Boot running?', 'error');
+    }
+  }
+
+  // ── MARK COMPLETE ─────────────────────────────────────────
+  async function markComplete(id, alreadyDone) {
+    if (alreadyDone) return;
+    try {
+      const res = await fetch(`${BASE}/${id}/complete`, { method: 'PATCH' });
+      if (!res.ok) throw new Error();
+      const updated = await res.json();
+      allTodos = allTodos.map(t => t.id === id ? updated : t);
+      renderTodos();
+      updateStats();
+      toast('Marked as done!', 'success');
+    } catch {
+      toast('Could not update todo', 'error');
+    }
+  }
+
+  // ── DELETE ────────────────────────────────────────────────
+  async function deleteTodo(id) {
+    if (!confirm('Delete this todo?')) return;
+    try {
+      const res = await fetch(`${BASE}/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error();
+      allTodos = allTodos.filter(t => t.id !== id);
+      renderTodos();
+      updateStats();
+      toast('Todo deleted', 'success');
+    } catch {
+      toast('Could not delete todo', 'error');
+    }
+  }
+
+  // ── UPDATE ────────────────────────────────────────────────
+  function openEditModal(id, name, desc) {
+    document.getElementById('edit-id').value   = id;
+    document.getElementById('edit-name').value = name;
+    document.getElementById('edit-desc').value = desc;
+    document.getElementById('err-edit-name').classList.remove('show');
+    document.getElementById('update-modal').classList.add('open');
+  }
+  function closeModal() {
+    document.getElementById('update-modal').classList.remove('open');
+  }
+
+  async function updateTodo() {
+    const id   = document.getElementById('edit-id').value;
+    const name = document.getElementById('edit-name').value.trim();
+    const desc = document.getElementById('edit-desc').value.trim();
+
+    if (name.length < 2) {
+      document.getElementById('err-edit-name').classList.add('show');
+      return;
+    }
+    document.getElementById('err-edit-name').classList.remove('show');
+
+    try {
+      const res = await fetch(`${BASE}/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, description: desc })
+      });
+      if (!res.ok) throw new Error();
+      const updated = await res.json();
+      allTodos = allTodos.map(t => t.id === parseInt(id) ? updated : t);
+      closeModal();
+      renderTodos();
+      toast('Todo updated!', 'success');
+    } catch {
+      toast('Could not update todo', 'error');
+    }
+  }
+
+  // ── SEARCH ────────────────────────────────────────────────
+  function searchTodos() { renderTodos(); }
+
+  // ── FILTER ────────────────────────────────────────────────
+  function setFilter(f, el) {
+    currentFilter = f;
+    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    renderTodos();
+  }
+
+  // ── TOAST ─────────────────────────────────────────────────
+  function toast(msg, type = 'success') {
+    const wrap = document.getElementById('toast-wrap');
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.innerHTML = `<div class="toast-dot"></div>${msg}`;
+    wrap.appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+  }
+
+  // ── HELPERS ───────────────────────────────────────────────
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function escAttr(s) {
+    return String(s).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+  }
+  function formatDate(dt) {
+    if (!dt) return '';
+    const d = new Date(dt);
+    return d.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+  }
+
+  // Close modal on overlay click
+  document.getElementById('update-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  // Enter key to create
+  document.getElementById('input-name').addEventListener('keydown', e => {
+    if (e.key === 'Enter') createTodo();
+  });
+
+  // Init
+  loadTodos();
+</script>
+</body>
+</html>
