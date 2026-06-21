@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import java.util.List;
 
-@CrossOrigin(origins = "https://fabulous-taiyaki-8c6d3d.netlify.app")
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/todos")
 public class TodoController {
